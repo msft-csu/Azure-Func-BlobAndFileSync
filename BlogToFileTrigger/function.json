@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "name": "blobin",
+      "type": "blobTrigger",
+      "direction": "in",
+      "path": "audit/{name}",
+      "connection": "azuredevices_STORAGE"
+    }
+  ]
+}
