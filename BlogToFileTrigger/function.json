@@ -5,7 +5,7 @@
       "type": "blobTrigger",
       "direction": "in",
       "path": "audit/{name}",
-      "connection": "azuredevices_STORAGE"
+      "connection": "STORAGE_CONN_STRING"
     }
   ]
 }
