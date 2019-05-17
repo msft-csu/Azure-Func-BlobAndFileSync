@@ -46,14 +46,13 @@ public static class FileNameHelper {
         return nameStack;
     }
 
-    public static String CreateFullPathIfNotExists(CloudFileClient client, CloudFileShare share, IEnumerable filePathStack) {
-        var root = share.GetRootDirectoryReference();
-        root.CreateIfNotExistsAsync().Wait();
+    public static String CreateFullPathIfNotExists(ILogger log, CloudFileClient client, CloudFileShare share, IEnumerable filePathStack) {
         var fullPath = "";
         foreach ( Object obj in filePathStack ) {
-            var dir = root.GetDirectoryReference(obj.ToString());
+            var dir = share.GetRootDirectoryReference().GetDirectoryReference(obj.ToString());
             fullPath = obj.ToString();
             dir.CreateIfNotExistsAsync().Wait();
+            log.LogInformation("Path created: " + fullPath);
         }
         return fullPath; 
     }

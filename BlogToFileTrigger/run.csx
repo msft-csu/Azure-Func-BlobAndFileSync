@@ -19,31 +19,25 @@ public static void Run(CloudBlockBlob blobin, string name, ILogger log)
 
     // Grab the share we want to replicate to from the app settings
     var shareName = AppSettingsHelper.GetAppSetting("DESTINATION_SHARE");
-    log.LogInformation("DESTINATION_SHARE: " + shareName );
     
     // Create a CloudFileShare object that references the share we are replicating to
     var share = fileClient.GetShareReference(shareName);
-    log.LogInformation("ShareName: " + share.Name );
 
     // Get Filename only
     var fileName = Path.GetFileName(name);
-    log.LogInformation("GetFileName: " + name);
 
     // The CloudDirectory method CreateIfNotExists does NOT create subdirectories
     // This requires us to build paths from the root up.  GetStackofNames
     // Provides a LIFO Stack with directory names.
     var fileStack = FileNameHelper.GetStackofNames(log, name);
-    log.LogInformation("Stack length: " + fileStack.Count);
 
     // CreateFullPathIfNotExists uses the LIFO Stack to iterate over the directory
     // structure and create all parent/child directories and returns the last directory
     // path created as a string.
-    var path = FileNameHelper.CreateFullPathIfNotExists(fileClient, share, fileStack).Replace(@"\","/");
-    log.LogInformation("FullPath: " + path);
+    var path = FileNameHelper.CreateFullPathIfNotExists(log, fileClient, share, fileStack).Replace(@"\","/");
 
     // Create a reference to the destination CloudFile that will be created in File Storage
-    var cloudFile = GetTargetCloudFile(fileClient, share, path, fileName);
-    log.LogInformation("DestFile: " + cloudFile.StorageUri.PrimaryUri.ToString() );
+    var cloudFile = GetTargetCloudFile(log, fileClient, share, path, fileName);
 
     // Using Uri's to copy files in Azure Storage requires SAS Token and URI
     var blobSas = blobin.GetSharedAccessSignature(new SharedAccessBlobPolicy()
@@ -55,8 +49,6 @@ public static void Run(CloudBlockBlob blobin, string name, ILogger log)
 
     // Construct the URI to the source file, including the SAS token.
     var blobSasUri = new Uri(blobin.StorageUri.PrimaryUri.ToString() + blobSas);
-    log.LogInformation("sourceUri: " + blobSasUri.AbsoluteUri );
-
 
     // Copy the file to the blob.
     cloudFile.StartCopyAsync(blobSasUri).Wait();
@@ -69,11 +61,10 @@ public static void PrintValues( ILogger log, IEnumerable myCollection )  {
     }
 }
 
-public static CloudFile GetTargetCloudFile(CloudFileClient client, CloudFileShare fileShare, string targetFilePath, string targetDirectory = "") {
+public static CloudFile GetTargetCloudFile(ILogger log, CloudFileClient client, CloudFileShare fileShare, string targetDirectory, string targetFilePath ) {
     var root = fileShare.GetRootDirectoryReference();
-    CloudFileDirectory directory = null;
-    CloudFile newFile = null;
-    directory = root.GetDirectoryReference(targetDirectory);
-    newFile = directory.GetFileReference(targetFilePath);
+    var directory = root.GetDirectoryReference(String.IsNullOrEmpty(targetDirectory) ? "/" : targetDirectory);
+    // API is totally wonky and needs this hack for files dropped into the root folder 
+    var newFile = String.IsNullOrEmpty(targetDirectory) ? root.GetFileReference(targetFilePath) : directory.GetFileReference(targetFilePath);
     return newFile;
 }
