@@ -12,7 +12,16 @@ public static void Run(CloudBlockBlob blobin, string name, ILogger log)
 {
     log.LogInformation($"C# Blob trigger function Processed blob\n Name:{name} \n Size: {blobin.Properties.Length} Bytes");
     log.LogInformation($"Blob URI:{blobin.StorageUri.ToString()}");
-    // Grab the storage connection string from the environment 
+    
+    // list out the Blob properties
+    var blobProps = blobin.Properties;
+    log.LogInformation("Blobin has md5sum: " + blobProps.ContentMD5);
+    log.LogInformation("Blobin has lastmodified: " + blobProps.LastModified);
+    log.LogInformation("Blobin has created: " + blobProps.Created);
+    log.LogInformation("Blobin has etag: " + blobProps.ETag);
+    log.LogInformation("Blobin has length: " + blobProps.Length);
+
+ // Grab the storage connection string from the environment 
     var connStr = AppHelper.GetAppSetting("STORAGE_CONN_STRING");
 
     // Get Client for Cloud
@@ -48,7 +57,7 @@ public static void Run(CloudBlockBlob blobin, string name, ILogger log)
         SharedAccessExpiryTime = DateTime.UtcNow.AddHours(1)
     });
 
-    // Construct the URI to the source file, including the SAS token.
+       // Construct the URI to the source file, including the SAS token.
     var blobSasUri = new Uri(blobin.StorageUri.PrimaryUri.ToString() + blobSas);
 
     // Copy the file to the blob.
